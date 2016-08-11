@@ -57,17 +57,12 @@ function loopLedTest() {
     serial.write('*');
     for (var i = 0; i < numLedsPerStrip; i++) {
       for (var mask = 0x800000; mask != 0; mask >>= 1) {
-        if (i == 0) console.log();
-        if (i == 0) console.log('mask                  ', binarize(mask, 24));
         var b = 0;
         for (var strip = 0; strip < numStrips; strip++) {
-          if (i == 0) console.log('strip', strip, 'pixel', pixels[i * numStrips + strip], binarize(pixels[i * numStrips + strip], 24));
           if ((pixels[i * numStrips + strip] & mask) != 0) {
             b |= (1 << strip);
           }
         }
-        if (i == 0) console.log('result', offset, b, binarize(b, 8));
-        //serial.write(String.fromCharCode(b));
         buffer[offset++] = b;
       }
     }
