@@ -1,0 +1,16 @@
+{
+  "name": "ledserver",
+  "version": "0.0.1",
+  "description": "LED server for controlling Obscurious sculptures.",
+  "main": "server.js",
+  "dependencies": {
+    "serialport": "^4.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Niel McLaren",
+  "license": "MIT"
+}
