@@ -4,7 +4,9 @@
   "description": "LED server for controlling Obscurious sculptures.",
   "main": "server.js",
   "dependencies": {
-    "serialport": "^4.0.1"
+    "express": "^4.14.0",
+    "serialport": "^4.0.1",
+    "ws": "^1.1.1"
   },
   "devDependencies": {},
   "scripts": {
