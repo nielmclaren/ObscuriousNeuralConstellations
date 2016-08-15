@@ -2,7 +2,7 @@
 
 #include <OctoWS2811.h>
 
-const int numLedsPerStrip = 13;
+const int numLedsPerStrip = 30;
 
 DMAMEM int displayMemory[6 * numLedsPerStrip];
 int drawingMemory[6 * numLedsPerStrip];
