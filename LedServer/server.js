@@ -21,8 +21,6 @@ var serial = new SerialPort(portName);
 
 var pixels = [];
 
-var currLed = 0;
-
 const BLACK = 0x000000;
 const RED = 0xFF0000;
 const GREEN = 0x00FF00;
@@ -69,6 +67,8 @@ var prevInfections = [15];
 var infections = [15];
 var prevInfectTime = 0;
 
+var brightness = 0.5;
+
 initSocketServer();
 initHttpServer();
 initSerialPort();
@@ -80,14 +80,26 @@ function initSocketServer() {
   wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
       console.log('received: %s', message);
-
-      if (currLed++ >= numLedsPerStrip) {
-        currLed = 0;
-      }
+      handleMessage(message, ws);
     });
 
     console.log('WebSocket connected');
   });
+}
+
+function handleMessage(message, ws) {
+  switch (message) {
+    case 'up':
+      brightness += 0.02;
+      if (brightness > 1) brightness = 1;
+      ws.send('' + Math.floor(100 * brightness) + '%');
+      break;
+    case 'down':
+      brightness -= 0.02;
+      if (brightness < 0) brightness = 0;
+      ws.send('' + Math.floor(100 * brightness) + '%');
+      break;
+  }
 }
 
 function initHttpServer() {
@@ -225,6 +237,10 @@ function sendLedData() {
   var buffer = new Buffer(24 * numLedsPerStrip);
   var offset = 0;
 
+  for (var i = 0; i < numStrips * numLedsPerStrip; i++) {
+    pixels[i] = adjustBrightness(pixels[i]);
+  }
+
   serial.write('*');
   for (var i = 0; i < numLedsPerStrip; i++) {
     for (var mask = 0x800000; mask != 0; mask >>= 1) {
@@ -239,6 +255,20 @@ function sendLedData() {
   }
 
   serial.write(buffer);
+}
+
+function adjustBrightness(c) {
+  var r = (c & 0xff0000) >> 16;
+  var g = (c & 0xff00) >> 8;
+  var b = (c & 0xff);
+
+  r = gammaTable[Math.floor(r * brightness)];
+  g = gammaTable[Math.floor(g * brightness)];
+  b = gammaTable[Math.floor(b * brightness)];
+
+  c = (r << 16) + (g << 8) + b;
+
+  return c;
 }
 
 function binarize(n, len) {
@@ -276,17 +306,17 @@ function splitTime(t) {
 }
 
 function lerpColor(a, b, t) {
-  ar = (a & 0xff0000) >> 16;
-  ag = (a & 0xff00) >> 8;
-  ab = (a & 0xff);
+  var ar = (a & 0xff0000) >> 16;
+  var ag = (a & 0xff00) >> 8;
+  var ab = (a & 0xff);
 
-  br = (b & 0xff0000) >> 16;
-  bg = (b & 0xff00) >> 8;
-  bb = (b & 0xff);
+  var br = (b & 0xff0000) >> 16;
+  var bg = (b & 0xff00) >> 8;
+  var bb = (b & 0xff);
 
-  cr = ar + t * (br - ar);
-  cg = ag + t * (bg - ag);
-  cb = ab + t * (bb - ab);
+  var cr = ar + t * (br - ar);
+  var cg = ag + t * (bg - ag);
+  var cb = ab + t * (bb - ab);
 
   c = (cr << 16) + (cg << 8) + cb;
 

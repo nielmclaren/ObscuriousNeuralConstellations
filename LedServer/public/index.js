@@ -4,10 +4,14 @@ var host = window.document.location.host.replace(/:.*/, '');
 var ws = new WebSocket('ws://' + host + ':' + socketServerPort);
 
 ws.onmessage = function (event) {
-  console.log(event.data);
+  document.getElementById('readout').value = event.data;
 };
 
-function test() {
-  ws.send('test');
+function up() {
+  ws.send('up');
+}
+
+function down() {
+  ws.send('down');
 }
 
