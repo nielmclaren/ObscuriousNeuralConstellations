@@ -86,7 +86,7 @@ function handleMessage(message, ws) {
 }
 
 function initHttpServer() {
-  app.use(express.static('public'));
+  app.use(express.static(__dirname + '/public'));
   app.listen(httpServerPort, (err) => {
     if (err) {
       return console.log('Error: ', err);
