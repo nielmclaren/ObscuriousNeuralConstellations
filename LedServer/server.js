@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+var LedModel = require('./ledModel');
 var util = require('./util');
 
 const socketServerPort = 3001;
@@ -18,7 +19,7 @@ const numLedsPerStrip = 30;
 var portName = "/dev/cu.usbmodem862651";
 var serial = new SerialPort(portName);
 
-var pixels = [];
+var ledModel = new LedModel(numStrips, numLedsPerStrip);
 
 const BLACK = 0x000000;
 const RED = 0xFF0000;
@@ -123,13 +124,11 @@ function initLoop() {
   setInterval(function() {
     updatePixels();
     sendLedData();
-  }, 50);
+  }, 10);
 }
 
 function updatePixels() {
-  for (var i = 0; i < numStrips * numLedsPerStrip; i++) {
-    pixels[i] = 0;
-  }
+  ledModel.setColor(0);
 
   updateSpine(1);
   updateNodes(3);
@@ -139,35 +138,35 @@ function updatePixels() {
 
 function updateSpine(stripIndex) {
   var t = util.modTime(7000);
-  setPixelColor(stripIndex, 0, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t))));
-  setPixelColor(stripIndex, 1, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.1))));
-  setPixelColor(stripIndex, 2, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.2))));
-  setPixelColor(stripIndex, 3, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.4))));
-  setPixelColor(stripIndex, 4, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.6))));
-  setPixelColor(stripIndex, 6, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.8))));
-  setPixelColor(stripIndex, 5, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.9))));
+  ledModel.setPixelColor(stripIndex, 0, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t))));
+  ledModel.setPixelColor(stripIndex, 1, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.1))));
+  ledModel.setPixelColor(stripIndex, 2, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.2))));
+  ledModel.setPixelColor(stripIndex, 3, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.4))));
+  ledModel.setPixelColor(stripIndex, 4, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.6))));
+  ledModel.setPixelColor(stripIndex, 6, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.8))));
+  ledModel.setPixelColor(stripIndex, 5, util.lerpColor(YELLOW, VIOLET, util.splitTime(util.clampTime(t + 0.9))));
 }
 
 function updateNodes(stripIndex) {
   for (var i = 0; i < 40; i++) {
-    setPixelColor(stripIndex, i, 0xee5500);
+    ledModel.setPixelColor(stripIndex, i, 0xee5500);
   }
 }
 
 function updateMiniMoshi(stripIndex) {
   var t = util.modTime(8000);
   for (var i = 0; i < numLedsPerStrip; i++) {
-    setPixelColor(stripIndex, i, util.lerpColor(YELLOW, PINK, util.splitTime(util.clampTime(t + 0.1 * i))));
+    ledModel.setPixelColor(stripIndex, i, util.lerpColor(YELLOW, PINK, util.splitTime(util.clampTime(t + 0.1 * i))));
   }
 }
 
 function updateMiniMoshiInfectionVersion(stripIndex) {
   colorWipe(PINK);
   for (var i = 0; i < prevInfections.length; i++) {
-    setPixelColor(stripIndex, prevInfections[i], BABYBLUE);
+    ledModel.setPixelColor(stripIndex, prevInfections[i], BABYBLUE);
   }
   for (var i = 0; i < infections.length; i++) {
-    setPixelColor(stripIndex, infections[i], YELLOW);
+    ledModel.setPixelColor(stripIndex, infections[i], YELLOW);
   }
 
   stepInfections();
@@ -206,33 +205,17 @@ function nextIndex(index, noVisitIndex) {
 function updateBlobbyHead(stripIndex) {
   var dark = 0x999999;
   var light = 0xffffff;
-  setPixelColor(stripIndex, 0, util.lerpColor(dark, light, util.splitTime(util.modTime(1800))));
-  setPixelColor(stripIndex, 1, util.lerpColor(dark, light, util.splitTime(util.modTime(1600))));
-  setPixelColor(stripIndex, 2, util.lerpColor(dark, light, util.splitTime(util.modTime(1550))));
-  setPixelColor(stripIndex, 3, util.lerpColor(dark, light, util.splitTime(util.modTime(1100))));
+  ledModel.setPixelColor(stripIndex, 0, util.lerpColor(dark, light, util.splitTime(util.modTime(1800))));
+  ledModel.setPixelColor(stripIndex, 1, util.lerpColor(dark, light, util.splitTime(util.modTime(1600))));
+  ledModel.setPixelColor(stripIndex, 2, util.lerpColor(dark, light, util.splitTime(util.modTime(1550))));
+  ledModel.setPixelColor(stripIndex, 3, util.lerpColor(dark, light, util.splitTime(util.modTime(1100))));
 }
 
 function sendLedData() {
-  var buffer = new Buffer(24 * numLedsPerStrip);
-  var offset = 0;
+  ledModel.adjustBrightness(brightness);
 
-  for (var i = 0; i < numStrips * numLedsPerStrip; i++) {
-    pixels[i] = util.adjustBrightness(pixels[i], brightness);
-  }
-
+  var buffer = ledModel.getOctoBuffer();
   serial.write('*');
-  for (var i = 0; i < numLedsPerStrip; i++) {
-    for (var mask = 0x800000; mask != 0; mask >>= 1) {
-      var b = 0;
-      for (var strip = 0; strip < numStrips; strip++) {
-        if ((pixels[i * numStrips + strip] & mask) != 0) {
-          b |= (1 << strip);
-        }
-      }
-      buffer[offset++] = b;
-    }
-  }
-
   serial.write(buffer);
 }
 
