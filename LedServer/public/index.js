@@ -3,15 +3,13 @@ var socketServerPort = 3001;
 var host = window.document.location.host.replace(/:.*/, '');
 var ws = new WebSocket('ws://' + host + ':' + socketServerPort);
 
-ws.onmessage = function (event) {
-  document.getElementById('readout').value = event.data;
+ws.onmessage = function(event) {
+  var message = event.data;
+  $('.preset').removeClass('selected');
+  $('.' + message).addClass('selected');
 };
 
-function up() {
-  ws.send('up');
-}
-
-function down() {
-  ws.send('down');
+function preset(message) {
+  ws.send(message);
 }
 

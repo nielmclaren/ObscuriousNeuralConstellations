@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script type="text/javascript" src="jquery-3.1.0.slim.js"></script>
     <script type="text/javascript" src="index.js"></script>
     <link rel="stylesheet" type="text/css" href="index.css" />
   </head>
   <body>
-    <input type="text" id="readout" />
-    <button onclick="up()">Up</button>
-    <button onclick="down()">Down</button>
+    <button class="preset off" onclick="preset('off')">off</button>
+    <button class="preset low" onclick="preset('low')">low</button>
+    <button class="preset high" onclick="preset('high')">high</button>
   </body>
 </html>
